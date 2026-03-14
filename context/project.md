@@ -46,15 +46,18 @@ Flipside is a manually-curated news website split into two panes — left (liber
 
 ## What's Built
 
-- [x] Two-pane Drudge-style public layout
+- [x] Two-pane Drudge-style public layout (serif header, left/right columns, top story + photo, headline list)
 - [x] Sample stories.json with realistic placeholder content
 - [x] README, MISSION, STATE foundation docs
+- [x] context/ folder for AI session continuity (this file)
+- [x] .gitignore covers node_modules, .next, .env*, .claude/
 
-## What's Next
+## What's Next (start here)
 
-- [ ] Admin/curation UI at `/admin` (local only)
-- [ ] Gemini AI integration — story discovery + headline suggestions
-- [ ] Unsplash integration — photo suggestions for top stories
+- [ ] Admin/curation UI at `/admin` (local only, never deployed)
+- [ ] Gemini AI integration — given a topic or "find today's stories", returns left+right source pairs + Drudge-style headlines
+- [ ] Unsplash integration — AI suggests photo search terms, admin picks from results
+- [ ] Human approval flow — proposed stories shown for review before writing to stories.json
 - [ ] Mobile responsive layout
 
 ## User Notes
