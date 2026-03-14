@@ -1,0 +1,39 @@
+{
+  "lastUpdated": "2026-03-14T08:00:00Z",
+  "left": {
+    "topStory": {
+      "headline": "PRESIDENT SIGNS SWEEPING EXECUTIVE ORDER TARGETING FEDERAL WORKFORCE",
+      "url": "https://www.nytimes.com",
+      "source": "New York Times",
+      "photo": "https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=800&q=80",
+      "photoAlt": "The White House at dusk"
+    },
+    "stories": [
+      { "headline": "THOUSANDS OF FEDERAL WORKERS FACE UNCERTAIN FUTURES", "url": "https://www.washingtonpost.com", "source": "Washington Post" },
+      { "headline": "ECONOMISTS WARN CUTS COULD DESTABILIZE KEY AGENCIES", "url": "https://www.theguardian.com", "source": "The Guardian" },
+      { "headline": "DEMOCRATS CALL FOR EMERGENCY HEARINGS ON MASS FIRINGS", "url": "https://www.msnbc.com", "source": "MSNBC" },
+      { "headline": "CIVIL SERVANTS DESCRIBE 'CHAOS' INSIDE AGENCIES", "url": "https://www.npr.org", "source": "NPR" },
+      { "headline": "UNIONS VOW LEGAL CHALLENGE TO SWEEPING LAYOFFS", "url": "https://www.politico.com", "source": "Politico" },
+      { "headline": "WHAT HAPPENS WHEN GOVERNMENT EXPERTISE WALKS OUT THE DOOR", "url": "https://www.theatlantic.com", "source": "The Atlantic" },
+      { "headline": "COURTS BEGIN REVIEWING CONSTITUTIONALITY OF ORDER", "url": "https://www.cnn.com", "source": "CNN" }
+    ]
+  },
+  "right": {
+    "topStory": {
+      "headline": "TRUMP DELIVERS ON PROMISE TO SLASH BLOATED BUREAUCRACY",
+      "url": "https://www.foxnews.com",
+      "source": "Fox News",
+      "photo": "https://images.unsplash.com/photo-1618044733300-9472054094ee?w=800&q=80",
+      "photoAlt": "American flag flying over a government building"
+    },
+    "stories": [
+      { "headline": "DOGE IDENTIFIES $2 TRILLION IN WASTEFUL FEDERAL SPENDING", "url": "https://www.nypost.com", "source": "New York Post" },
+      { "headline": "VOTERS SUPPORT GOVERNMENT DOWNSIZING, POLLS SHOW", "url": "https://www.washingtonexaminer.com", "source": "Washington Examiner" },
+      { "headline": "DEEP STATE BUREAUCRATS RESIST ELECTED PRESIDENT'S AGENDA", "url": "https://www.dailywire.com", "source": "Daily Wire" },
+      { "headline": "FEDERAL WORKFORCE GREW 30% IN LAST DECADE — HERE'S THE DATA", "url": "https://www.nationalreview.com", "source": "National Review" },
+      { "headline": "EFFICIENCY GAINS ALREADY VISIBLE IN STREAMLINED AGENCIES", "url": "https://www.newsmax.com", "source": "Newsmax" },
+      { "headline": "LEFT-WING MEDIA MELTS DOWN OVER LONG-OVERDUE REFORM", "url": "https://www.breitbart.com", "source": "Breitbart" },
+      { "headline": "THE CASE FOR DISMANTLING THE ADMINISTRATIVE STATE", "url": "https://thefederalist.com", "source": "The Federalist" }
+    ]
+  }
+}
