@@ -150,8 +150,10 @@ function StackedSection({ left, right, pos, ease }: {
 }) {
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ clipPath: `inset(0 ${100 - pos}% 0 0)`, transition: ease }}>{left}</div>
+      {/* Both active panes are absolute — they don't contribute to container height */}
+      <div style={{ position: 'absolute', inset: 0, clipPath: `inset(0 ${100 - pos}% 0 0)`, transition: ease }}>{left}</div>
       <div style={{ position: 'absolute', inset: 0, clipPath: `inset(0 0 0 ${pos}%)`, transition: ease }}>{right}</div>
+      {/* Spacer: hidden, in flow — sole source of container height */}
       <div aria-hidden style={{ visibility: 'hidden', pointerEvents: 'none' }}>{left}</div>
     </div>
   )
@@ -201,7 +203,11 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
     }
   }, [onMouseMove, onMouseUp, onTouchMove, onTouchEnd])
 
-  const startDrag = () => {
+  const startDrag = (e: React.MouseEvent | React.TouchEvent) => {
+    // Don't hijack clicks on links
+    if ((e.target as HTMLElement).closest('a')) return
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    updatePos(clientX)
     dragging.current = true; setIsDragging(true)
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
@@ -210,7 +216,7 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
   const ease = isDragging ? 'none' : 'clip-path 0.45s ease'
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', overflow: 'hidden', userSelect: 'none' }}>
+    <div ref={containerRef} style={{ position: 'relative', overflow: 'hidden', userSelect: 'none', cursor: isDragging ? 'col-resize' : 'default' }} onMouseDown={startDrag} onTouchStart={startDrag}>
 
       {/* Hero: full-width stacked comparison */}
       <StackedSection
@@ -235,8 +241,6 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
           cursor: 'col-resize',
           transition: isDragging ? 'none' : 'left 0.45s ease',
         }}
-        onMouseDown={startDrag}
-        onTouchStart={startDrag}
       >
         <div style={{
           position: 'absolute', top: '32%',
