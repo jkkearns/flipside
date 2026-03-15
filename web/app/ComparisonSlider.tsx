@@ -17,7 +17,7 @@ function TopStoryBlock({ story, side }: { story: TopStory; side: 'left' | 'right
             alt={story.photoAlt}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, 50vw"
+            sizes="100vw"
           />
         </div>
         <h2
@@ -57,15 +57,10 @@ function NewspaperPane({ content, side }: { content: SideContent; side: 'left' |
   const bg = side === 'left' ? '#f7f9ff' : '#fff7f7'
   const label = side === 'left' ? '◀ THE LEFT' : 'THE RIGHT ▶'
   return (
-    <div className="h-full" style={{ backgroundColor: bg }}>
-      {/* Pane header bar */}
-      <div
-        className="py-2 px-4 border-b-2 border-black text-center"
-        style={{ backgroundColor: accent }}
-      >
+    <div style={{ backgroundColor: bg, width: '100%' }}>
+      <div className="py-2 px-4 border-b-2 border-black text-center" style={{ backgroundColor: accent }}>
         <h2 className="text-sm font-black uppercase tracking-widest text-white">{label}</h2>
       </div>
-      {/* Content */}
       <div className="px-4 py-4">
         <TopStoryBlock story={content.topStory} side={side} />
         <div>
@@ -78,45 +73,14 @@ function NewspaperPane({ content, side }: { content: SideContent; side: 'left' |
   )
 }
 
-// ─── Drag handle ──────────────────────────────────────────────────────────────
-
-function Handle({ onMouseDown, onTouchStart }: {
-  onMouseDown: () => void
-  onTouchStart: () => void
-}) {
-  return (
-    <div
-      className="relative flex-shrink-0 z-10 cursor-col-resize select-none"
-      style={{ width: '6px', background: '#111' }}
-      onMouseDown={onMouseDown}
-      onTouchStart={onTouchStart}
-    >
-      {/* Floating pill */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black text-white rounded-full flex items-center justify-center"
-        style={{
-          width: '40px',
-          height: '40px',
-          fontSize: '11px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-          border: '2px solid white',
-          letterSpacing: '0.05em',
-        }}
-      >
-        ◀▶
-      </div>
-    </div>
-  )
-}
-
 // ─── Main slider ──────────────────────────────────────────────────────────────
 
 export default function ComparisonSlider({ data }: { data: SiteData }) {
-  const [pos, setPos] = useState(50) // percent of container width for left pane
+  const [pos, setPos] = useState(50) // percent: where the clip boundary sits
   const dragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const clamp = (v: number) => Math.min(Math.max(v, 15), 85)
+  const clamp = (v: number) => Math.min(Math.max(v, 5), 95)
 
   const updatePos = useCallback((clientX: number) => {
     if (!containerRef.current) return
@@ -125,8 +89,7 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
   }, [])
 
   const onMouseMove = useCallback((e: MouseEvent) => {
-    if (!dragging.current) return
-    updatePos(e.clientX)
+    if (dragging.current) updatePos(e.clientX)
   }, [updatePos])
 
   const onMouseUp = useCallback(() => {
@@ -136,8 +99,7 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
   }, [])
 
   const onTouchMove = useCallback((e: TouchEvent) => {
-    if (!dragging.current) return
-    updatePos(e.touches[0].clientX)
+    if (dragging.current) updatePos(e.touches[0].clientX)
   }, [updatePos])
 
   const onTouchEnd = useCallback(() => { dragging.current = false }, [])
@@ -145,7 +107,7 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
   useEffect(() => {
     window.addEventListener('mousemove', onMouseMove)
     window.addEventListener('mouseup', onMouseUp)
-    window.addEventListener('touchmove', onTouchMove)
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
     window.addEventListener('touchend', onTouchEnd)
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
@@ -161,31 +123,51 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
     document.body.style.userSelect = 'none'
   }
 
-  // Fade the receding side as you approach the extremes
-  // At center (50): both fully opaque. At limits: receding side hits 0.45
-  const leftOpacity = 0.45 + (pos / 100) * 0.55
-  const rightOpacity = 0.45 + ((100 - pos) / 100) * 0.55
-
   return (
-    <div ref={containerRef} className="flex overflow-hidden">
-      {/* Left pane */}
-      <div
-        className="overflow-hidden flex-shrink-0"
-        style={{ width: `${pos}%`, opacity: leftOpacity, transition: 'opacity 0.08s' }}
-      >
+    <div ref={containerRef} className="relative overflow-hidden select-none">
+
+      {/* LEFT pane — full width, sits in normal flow (sets container height) */}
+      <div style={{ width: '100%' }}>
         <NewspaperPane content={data.left} side="left" />
       </div>
 
-      {/* Draggable divider */}
-      <Handle onMouseDown={startDrag} onTouchStart={startDrag} />
-
-      {/* Right pane — takes remaining space minus handle width */}
+      {/* RIGHT pane — full width, absolutely overlaid, clipped from the left edge to `pos` */}
+      {/* clip-path: inset(top right bottom left) — cuts off `pos%` from the left, revealing left pane beneath */}
       <div
-        className="overflow-hidden flex-shrink-0"
-        style={{ width: `calc(${100 - pos}% - 6px)`, opacity: rightOpacity, transition: 'opacity 0.08s' }}
+        className="absolute inset-0"
+        style={{ clipPath: `inset(0 0 0 ${pos}%)` }}
       >
         <NewspaperPane content={data.right} side="right" />
       </div>
+
+      {/* Divider line + drag handle */}
+      <div
+        className="absolute top-0 bottom-0 z-20 cursor-col-resize"
+        style={{
+          left: `${pos}%`,
+          transform: 'translateX(-50%)',
+          width: '6px',
+          background: '#111',
+        }}
+        onMouseDown={startDrag}
+        onTouchStart={startDrag}
+      >
+        {/* Pill handle */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black text-white rounded-full flex items-center justify-center"
+          style={{
+            width: '40px',
+            height: '40px',
+            fontSize: '11px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+            border: '2px solid white',
+            letterSpacing: '0.05em',
+          }}
+        >
+          ◀▶
+        </div>
+      </div>
+
     </div>
   )
 }
