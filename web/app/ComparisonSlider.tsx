@@ -4,92 +4,40 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { SideContent, SiteData, Story } from '@/types/stories'
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Hero pane (full-width stacked comparison) ────────────────────────────────
+// Both hero panes render at full container width.
+// Left pane clips to show its left portion; right pane clips to show its right portion.
+// At 50/50: two different half-photos of the same story, side by side.
+// Headlines are single-line and get sliced — enough to read the framing.
 
-function StoryLink({ story, side }: { story: Story; side: 'left' | 'right' }) {
-  const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
-  return (
-    <div className="py-1.5 border-b border-gray-200">
-      <a
-        href={story.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block text-sm font-bold uppercase leading-snug hover:underline"
-        style={{ color: '#111', fontFamily: "Georgia, 'Times New Roman', serif" }}
-      >
-        {story.headline}
-      </a>
-      <span className="text-xs uppercase tracking-widest" style={{ color: accent }}>
-        {story.source}
-      </span>
-    </div>
-  )
-}
-
-// Each pane renders at full container width.
-// The LEFT pane is RTL (content anchored to the right edge, grows leftward).
-// The RIGHT pane is LTR (content anchored to the left edge, grows rightward).
-//
-// At 50/50, with left pane clipped to show its right 50% and right pane clipped
-// to show its left 50%, you see:
-//   - LEFT pane's right edge: beginning of left headline + right half of left photo
-//   - RIGHT pane's left edge: beginning of right headline + left half of right photo
-//
-// Two different photos of the same story, bisected. Half a headline on each side.
-// Drag to reveal the full framing.
-
-function NewspaperPane({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
+function HeroPane({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
   const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
   const bg = side === 'left' ? '#f7f9ff' : '#fff7f7'
   const label = side === 'left' ? '◀ THE LEFT' : 'THE RIGHT ▶'
-
-  // Left pane: RTL so content is anchored to the right edge (the divider)
-  // Right pane: LTR so content is anchored to the left edge (the divider)
-  // Both panes "open outward" from center as you drag.
-  const dir = side === 'left' ? 'rtl' : 'ltr'
-
   return (
-    <div style={{ backgroundColor: bg, width: '100%', direction: dir }}>
-      {/* Header bar */}
-      <div
-        className="py-2 border-b-2 border-black"
-        style={{ backgroundColor: accent, paddingLeft: '1.5rem', paddingRight: '1.5rem' }}
-      >
-        <h2
-          className="text-sm font-black uppercase tracking-widest text-white"
-          style={{ direction: 'ltr', textAlign: side === 'left' ? 'right' : 'left' }}
-        >
-          {label}
-        </h2>
+    <div style={{ backgroundColor: bg, width: '100%' }}>
+      <div className="py-2 px-6 border-b-2 border-black" style={{ backgroundColor: accent }}>
+        <h2 className="text-sm font-black uppercase tracking-widest text-white">{label}</h2>
       </div>
-
-      {/* Banner headline — single line, cut by slider */}
-      <div style={{ padding: '1rem 1.5rem 0.5rem', overflow: 'hidden' }}>
+      <div className="px-6 pt-4 pb-2 overflow-hidden">
         <a href={content.topStory.url} target="_blank" rel="noopener noreferrer">
           <h2
-            className="font-black uppercase leading-none hover:underline"
+            className="font-black uppercase leading-tight hover:underline"
             style={{
               fontFamily: "Georgia, 'Times New Roman', serif",
               fontSize: 'clamp(1.25rem, 2.5vw, 2rem)',
               color: accent,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
-              direction: 'ltr',
-              textAlign: side === 'left' ? 'right' : 'left',
             }}
           >
             {content.topStory.headline}
           </h2>
         </a>
-        <p
-          className="text-xs text-gray-500 mt-1 uppercase tracking-widest"
-          style={{ direction: 'ltr', textAlign: side === 'left' ? 'right' : 'left' }}
-        >
+        <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">
           {content.topStory.source}
         </p>
       </div>
-
-      {/* Full-width photo — the main visual that gets bisected */}
       <div className="relative w-full" style={{ aspectRatio: '3/2' }}>
         <Image
           src={content.topStory.photo}
@@ -99,9 +47,58 @@ function NewspaperPane({ content, side }: { content: SideContent; side: 'left' |
           sizes="100vw"
         />
       </div>
+    </div>
+  )
+}
 
-      {/* Supporting headlines */}
-      <div style={{ padding: '1rem 1.5rem', direction: 'ltr' }}>
+// ─── Stories column (curtain reveal) ─────────────────────────────────────────
+// Each column renders at full width internally but lives in a container whose
+// width tracks the slider. Headlines are single-line; as the column narrows,
+// text is clipped from the right — a curtain sweeping across the list.
+
+function StoryLink({ story, side }: { story: Story; side: 'left' | 'right' }) {
+  const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
+  return (
+    <div className="py-1.5 border-b border-gray-200 overflow-hidden">
+      <a
+        href={story.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block text-sm font-bold uppercase leading-snug hover:underline"
+        style={{
+          color: '#111',
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+        }}
+      >
+        {story.headline}
+      </a>
+      <span
+        className="text-xs uppercase tracking-widest"
+        style={{ color: accent, whiteSpace: 'nowrap' }}
+      >
+        {story.source}
+      </span>
+    </div>
+  )
+}
+
+function StoriesColumn({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
+  const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
+  const bg = side === 'left' ? '#f7f9ff' : '#fff7f7'
+  const label = side === 'left' ? 'More from the Left ▸' : '◂ More from the Right'
+  return (
+    <div style={{ backgroundColor: bg, height: '100%' }}>
+      <div className="py-1.5 px-4 border-b border-black" style={{ backgroundColor: accent + '20' }}>
+        <h3
+          className="text-xs font-black uppercase tracking-widest"
+          style={{ color: accent, whiteSpace: 'nowrap' }}
+        >
+          {label}
+        </h3>
+      </div>
+      <div className="px-4 py-2">
         {content.stories.map((story, i) => (
           <StoryLink key={i} story={story} side={side} />
         ))}
@@ -114,6 +111,7 @@ function NewspaperPane({ content, side }: { content: SideContent; side: 'left' |
 
 export default function ComparisonSlider({ data }: { data: SiteData }) {
   const [pos, setPos] = useState(50)
+  const [isDragging, setIsDragging] = useState(false)
   const dragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -131,6 +129,7 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
 
   const onMouseUp = useCallback(() => {
     dragging.current = false
+    setIsDragging(false)
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
   }, [])
@@ -139,12 +138,15 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
     if (dragging.current) updatePos(e.touches[0].clientX)
   }, [updatePos])
 
-  const onTouchEnd = useCallback(() => { dragging.current = false }, [])
+  const onTouchEnd = useCallback(() => {
+    dragging.current = false
+    setIsDragging(false)
+  }, [])
 
-  // Hint animation on mount: nudge the slider left then back to center
+  // Hint animation on load: nudge left then settle at center
   useEffect(() => {
-    const t1 = setTimeout(() => setPos(35), 600)
-    const t2 = setTimeout(() => setPos(50), 1200)
+    const t1 = setTimeout(() => setPos(35), 700)
+    const t2 = setTimeout(() => setPos(50), 1400)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
 
@@ -163,62 +165,84 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
 
   const startDrag = () => {
     dragging.current = true
+    setIsDragging(true)
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
   }
 
+  const ease = isDragging ? 'none' : 'all 0.45s ease'
+  const clipEase = isDragging ? 'none' : 'clip-path 0.45s ease'
+
   return (
     <div ref={containerRef} className="relative overflow-hidden select-none">
 
-      {/* LEFT pane — clipped to show only its RIGHT portion (up to the slider) */}
-      {/* RTL layout means content is anchored to the right edge = the divider */}
-      <div
-        style={{
-          width: '100%',
-          clipPath: `inset(0 ${100 - pos}% 0 0)`,
-          transition: dragging.current ? 'none' : 'clip-path 0.4s ease',
-        }}
-      >
-        <NewspaperPane content={data.left} side="left" />
+      {/* ── HERO: full-width stacked comparison ─────────────────────────── */}
+      <div className="relative">
+
+        {/* Left hero — clipped to show its left portion */}
+        <div style={{ clipPath: `inset(0 ${100 - pos}% 0 0)`, transition: clipEase }}>
+          <HeroPane content={data.left} side="left" />
+        </div>
+
+        {/* Right hero — overlaid, clipped to show its right portion */}
+        <div
+          className="absolute inset-0"
+          style={{ clipPath: `inset(0 0 0 ${pos}%)`, transition: clipEase }}
+        >
+          <HeroPane content={data.right} side="right" />
+        </div>
+
+        {/* Invisible spacer so the section takes the correct height */}
+        <div aria-hidden style={{ visibility: 'hidden', pointerEvents: 'none' }}>
+          <HeroPane content={data.left} side="left" />
+        </div>
+
       </div>
 
-      {/* RIGHT pane — absolutely overlaid, clipped to show only its LEFT portion (from slider rightward) */}
-      {/* LTR layout means content is anchored to the left edge = the divider */}
-      <div
-        className="absolute inset-0"
-        style={{
-          clipPath: `inset(0 0 0 ${pos}%)`,
-          transition: dragging.current ? 'none' : 'clip-path 0.4s ease',
-        }}
-      >
-        <NewspaperPane content={data.right} side="right" />
+      {/* ── STORIES: two columns proportional to slider position ─────────── */}
+      {/* Headlines are nowrap so they clip at the column edge — curtain effect */}
+      <div className="flex border-t-2 border-black">
+
+        <div
+          className="flex-shrink-0 overflow-hidden border-r border-gray-400"
+          style={{ width: `${pos}%`, transition: ease }}
+        >
+          <StoriesColumn content={data.left} side="left" />
+        </div>
+
+        <div
+          className="flex-shrink-0 overflow-hidden"
+          style={{ width: `${100 - pos}%`, transition: ease }}
+        >
+          <StoriesColumn content={data.right} side="right" />
+        </div>
+
       </div>
 
-      {/* Invisible spacer so the container gets the right height */}
-      <div aria-hidden style={{ visibility: 'hidden', pointerEvents: 'none' }}>
-        <NewspaperPane content={data.left} side="left" />
-      </div>
-
-      {/* Divider handle */}
+      {/* ── DIVIDER: single bar spanning both sections ───────────────────── */}
       <div
         className="absolute top-0 bottom-0 z-20 cursor-col-resize"
         style={{
           left: `${pos}%`,
           transform: 'translateX(-50%)',
-          width: '6px',
+          width: '5px',
           background: '#111',
-          transition: dragging.current ? 'none' : 'left 0.4s ease',
+          transition: ease,
         }}
         onMouseDown={startDrag}
         onTouchStart={startDrag}
       >
+        {/* Drag handle — floats in the hero photo area */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black text-white rounded-full flex items-center justify-center"
+          className="absolute left-1/2 -translate-x-1/2 bg-black text-white rounded-full flex items-center justify-center"
           style={{
-            width: '40px', height: '40px', fontSize: '11px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-            border: '2px solid white',
+            top: '38%',
+            width: '40px',
+            height: '40px',
+            fontSize: '11px',
             letterSpacing: '0.05em',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
+            border: '2px solid white',
           }}
         >
           ◀▶
