@@ -26,7 +26,8 @@ Flipside is a manually-curated news website split into two panes — left (liber
 | `MISSION.md` | Editorial philosophy, approved source list |
 | `STATE.md` | Project state, roadmap, AI curation instructions |
 | `context/project.md` | This file — AI session context |
-| `web/app/page.tsx` | Main two-pane public layout |
+| `web/app/page.tsx` | Masthead + footer, passes data to ComparisonSlider |
+| `web/app/ComparisonSlider.tsx` | The main UI — all slider logic lives here |
 | `web/data/stories.json` | Live story content |
 | `web/types/stories.ts` | TypeScript types for story data |
 
@@ -46,19 +47,30 @@ Flipside is a manually-curated news website split into two panes — left (liber
 
 ## What's Built
 
-- [x] Two-pane Drudge-style public layout (serif header, left/right columns, top story + photo, headline list)
-- [x] Sample stories.json with realistic placeholder content
+- [x] Comparison slider — two full-width newspaper layouts stacked, clip-path reveals each side
+- [x] Hero section — full-width headline + photo, slider bisects both dramatically
+- [x] Stories row — 4-column mirrored grid; left pane L→R, right pane reversed R→L (right-aligned)
+- [x] At 50/50: `[Story1 | Story2 ‖ Story2' | Story1']` — same event facing each other across divider
+- [x] Drag from anywhere on the page (not just the handle); links still work
+- [x] Load hint animation — slider nudges left on mount to teach the interaction
+- [x] Newsprint background, serif typography, colored accent bars per side
+- [x] Sample stories.json with realistic placeholder content (federal workforce story)
 - [x] README, MISSION, STATE foundation docs
 - [x] context/ folder for AI session continuity (this file)
-- [x] .gitignore covers node_modules, .next, .env*, .claude/
 
 ## What's Next (start here)
 
+### Visual polish (next session)
+- [ ] More authentic newspaper typography — varied headline sizes, column rules, classic broadsheet feel
+- [ ] The slider concept is locked in; the visual treatment needs to feel like two real newspapers
+
+### Features (after visual is solid)
 - [ ] Admin/curation UI at `/admin` (local only, never deployed)
-- [ ] Gemini AI integration — given a topic or "find today's stories", returns left+right source pairs + Drudge-style headlines
-- [ ] Unsplash integration — AI suggests photo search terms, admin picks from results
-- [ ] Human approval flow — proposed stories shown for review before writing to stories.json
+- [ ] Gemini AI integration — story discovery + left/right headline suggestions
+- [ ] Unsplash integration — photo suggestions for top stories
+- [ ] Human approval flow — review before writing to stories.json
 - [ ] Mobile responsive layout
+- [ ] Vercel deployment
 
 ## User Notes
 
