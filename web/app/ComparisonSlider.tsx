@@ -25,8 +25,8 @@ function HeroPane({ content, side }: { content: SideContent; side: 'left' | 'rig
       </div>
 
       {/* Banner headline */}
-      <div style={{ padding: '0.75rem 1.25rem 0.5rem', overflow: 'hidden', borderBottom: '1px solid #ccc' }}>
-        <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '0.3rem', textAlign: align }}>
+      <div style={{ padding: '0.5rem 1.25rem 0.4rem', overflow: 'hidden' }}>
+        <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '0.2rem', textAlign: align }}>
           {content.topStory.source}
         </p>
         <a href={content.topStory.url} target="_blank" rel="noopener noreferrer">
@@ -47,7 +47,7 @@ function HeroPane({ content, side }: { content: SideContent; side: 'left' | 'rig
       </div>
 
       {/* Full-width photo */}
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/7' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '3/1' }}>
         <Image src={content.topStory.photo} alt={content.topStory.photoAlt} fill className="object-cover" sizes="100vw" />
       </div>
     </div>
@@ -68,7 +68,7 @@ function HeroPane({ content, side }: { content: SideContent; side: 'left' | 'rig
 // Slide left  → right pane expands, revealing Story 3' and Story 4' (bonus coverage)
 // Slide right → left pane expands, revealing Story 3  and Story 4  (bonus coverage)
 
-function StoryColumn({ story, align }: { story: Story; align: 'left' | 'right' }) {
+function StoryColumn({ story, align, accent }: { story: Story; align: 'left' | 'right'; accent: string }) {
   return (
     <a
       href={story.url}
@@ -76,27 +76,28 @@ function StoryColumn({ story, align }: { story: Story; align: 'left' | 'right' }
       rel="noopener noreferrer"
       style={{ display: 'block', padding: '0.75rem 1rem', height: '100%' }}
     >
-      <h3 style={{
-        fontFamily: SERIF,
-        fontSize: '0.95rem',
-        fontWeight: 800,
-        lineHeight: 1.3,
-        textTransform: 'uppercase',
-        color: '#111',
-        textAlign: align,
-        marginBottom: '0.35rem',
-      }}>
-        {story.headline}
-      </h3>
       <p style={{
         fontSize: '0.6rem',
         textTransform: 'uppercase',
         letterSpacing: '0.1em',
-        color: '#888',
+        color: accent,
         textAlign: align,
+        marginBottom: '0.25rem',
+        fontWeight: 700,
       }}>
         {story.source}
       </p>
+      <h3 style={{
+        fontFamily: SERIF,
+        fontSize: 'clamp(1rem, 1.4vw, 1.25rem)',
+        fontWeight: 800,
+        lineHeight: 1.25,
+        textTransform: 'uppercase',
+        color: '#111',
+        textAlign: align,
+      }}>
+        {story.headline}
+      </h3>
     </a>
   )
 }
@@ -129,7 +130,7 @@ function StoriesRow({ content, side }: { content: SideContent; side: 'left' | 'r
               borderRight: i < 3 ? '1px solid #ccc' : 'none',
             }}
           >
-            <StoryColumn story={story} align={align} />
+            <StoryColumn story={story} align={align} accent={accent} />
           </div>
         ))}
       </div>
