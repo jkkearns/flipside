@@ -4,20 +4,25 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { SideContent, SiteData, Story } from '@/types/stories'
 
-// ─── Hero pane (full-width stacked comparison) ────────────────────────────────
-// Both hero panes render at full container width.
-// Left pane clips to show its left portion; right pane clips to show its right portion.
-// At 50/50: two different half-photos of the same story, side by side.
-// Headlines are single-line and get sliced — enough to read the framing.
+// ─── Hero pane ────────────────────────────────────────────────────────────────
+// Full-width. Both sides stack; clip-path bisects them at the divider.
+// At 50/50: two different half-photos of the same story meeting at center.
 
 function HeroPane({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
   const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
   const bg = side === 'left' ? '#f7f9ff' : '#fff7f7'
   const label = side === 'left' ? '◀ THE LEFT' : 'THE RIGHT ▶'
+  const align = side === 'left' ? 'left' : 'right'
+
   return (
     <div style={{ backgroundColor: bg, width: '100%' }}>
       <div className="py-2 px-6 border-b-2 border-black" style={{ backgroundColor: accent }}>
-        <h2 className="text-sm font-black uppercase tracking-widest text-white">{label}</h2>
+        <h2
+          className="text-sm font-black uppercase tracking-widest text-white"
+          style={{ textAlign: align }}
+        >
+          {label}
+        </h2>
       </div>
       <div className="px-6 pt-4 pb-2 overflow-hidden">
         <a href={content.topStory.url} target="_blank" rel="noopener noreferrer">
@@ -29,12 +34,16 @@ function HeroPane({ content, side }: { content: SideContent; side: 'left' | 'rig
               color: accent,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
+              textAlign: align,
             }}
           >
             {content.topStory.headline}
           </h2>
         </a>
-        <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">
+        <p
+          className="text-xs text-gray-500 mt-1 uppercase tracking-widest"
+          style={{ textAlign: align }}
+        >
           {content.topStory.source}
         </p>
       </div>
@@ -51,15 +60,18 @@ function HeroPane({ content, side }: { content: SideContent; side: 'left' | 'rig
   )
 }
 
-// ─── Stories column (curtain reveal) ─────────────────────────────────────────
-// Each column renders at full width internally but lives in a container whose
-// width tracks the slider. Headlines are single-line; as the column narrows,
-// text is clipped from the right — a curtain sweeping across the list.
+// ─── Stories pane ─────────────────────────────────────────────────────────────
+// Full-width. Both sides stack with the same clip-path mechanic as the hero.
+// Left side: LTR, headlines left-aligned — text grows rightward from left edge.
+// Right side: headlines right-aligned — text grows leftward from right edge.
+// Both sides show the beginning of their headlines at the divider edge.
+// No reflow, ever — only the clip boundary moves.
 
-function StoryLink({ story, side }: { story: Story; side: 'left' | 'right' }) {
+function StoryRow({ story, side }: { story: Story; side: 'left' | 'right' }) {
   const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
+  const align = side === 'left' ? 'left' : 'right'
   return (
-    <div className="py-1.5 border-b border-gray-200 overflow-hidden">
+    <div className="py-2 border-b border-gray-200 px-6 overflow-hidden">
       <a
         href={story.url}
         target="_blank"
@@ -70,38 +82,74 @@ function StoryLink({ story, side }: { story: Story; side: 'left' | 'right' }) {
           fontFamily: "Georgia, 'Times New Roman', serif",
           whiteSpace: 'nowrap',
           overflow: 'hidden',
+          textAlign: align,
         }}
       >
         {story.headline}
       </a>
-      <span
-        className="text-xs uppercase tracking-widest"
-        style={{ color: accent, whiteSpace: 'nowrap' }}
+      <p
+        className="text-xs uppercase tracking-widest mt-0.5"
+        style={{ color: accent, whiteSpace: 'nowrap', textAlign: align }}
       >
         {story.source}
-      </span>
+      </p>
     </div>
   )
 }
 
-function StoriesColumn({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
+function StoriesPane({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
   const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
-  const bg = side === 'left' ? '#f7f9ff' : '#fff7f7'
-  const label = side === 'left' ? 'More from the Left ▸' : '◂ More from the Right'
+  const bg = side === 'left' ? '#f0f3ff' : '#fff0f0'
+  const label = side === 'left' ? '◀ More from the Left' : 'More from the Right ▶'
+  const align = side === 'left' ? 'left' : 'right'
   return (
-    <div style={{ backgroundColor: bg, height: '100%' }}>
-      <div className="py-1.5 px-4 border-b border-black" style={{ backgroundColor: accent + '20' }}>
+    <div style={{ backgroundColor: bg, width: '100%' }}>
+      <div
+        className="py-1.5 px-6 border-b border-black"
+        style={{ backgroundColor: accent + '18' }}
+      >
         <h3
           className="text-xs font-black uppercase tracking-widest"
-          style={{ color: accent, whiteSpace: 'nowrap' }}
+          style={{ color: accent, whiteSpace: 'nowrap', textAlign: align }}
         >
           {label}
         </h3>
       </div>
-      <div className="px-4 py-2">
-        {content.stories.map((story, i) => (
-          <StoryLink key={i} story={story} side={side} />
-        ))}
+      {content.stories.map((story, i) => (
+        <StoryRow key={i} story={story} side={side} />
+      ))}
+    </div>
+  )
+}
+
+// ─── Reusable stacked section ─────────────────────────────────────────────────
+// Renders two full-width panes stacked. Left clips to show its left portion;
+// right clips to show its right portion. A hidden spacer sets the height.
+
+function StackedSection({
+  left,
+  right,
+  pos,
+  ease,
+}: {
+  left: React.ReactNode
+  right: React.ReactNode
+  pos: number
+  ease: string
+}) {
+  return (
+    <div className="relative">
+      {/* Left pane — in flow (sets height), clipped to left portion */}
+      <div style={{ clipPath: `inset(0 ${100 - pos}% 0 0)`, transition: ease }}>
+        {left}
+      </div>
+      {/* Right pane — absolute overlay, clipped to right portion */}
+      <div className="absolute inset-0" style={{ clipPath: `inset(0 0 0 ${pos}%)`, transition: ease }}>
+        {right}
+      </div>
+      {/* Spacer — invisible, sets container height */}
+      <div aria-hidden style={{ visibility: 'hidden', pointerEvents: 'none' }}>
+        {left}
       </div>
     </div>
   )
@@ -143,7 +191,7 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
     setIsDragging(false)
   }, [])
 
-  // Hint animation on load: nudge left then settle at center
+  // Hint animation on load
   useEffect(() => {
     const t1 = setTimeout(() => setPos(35), 700)
     const t2 = setTimeout(() => setPos(50), 1400)
@@ -170,56 +218,30 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
     document.body.style.userSelect = 'none'
   }
 
-  const ease = isDragging ? 'none' : 'all 0.45s ease'
-  const clipEase = isDragging ? 'none' : 'clip-path 0.45s ease'
+  const ease = isDragging ? 'none' : 'clip-path 0.45s ease'
 
   return (
     <div ref={containerRef} className="relative overflow-hidden select-none">
 
-      {/* ── HERO: full-width stacked comparison ─────────────────────────── */}
-      <div className="relative">
+      {/* Hero section */}
+      <StackedSection
+        pos={pos}
+        ease={ease}
+        left={<HeroPane content={data.left} side="left" />}
+        right={<HeroPane content={data.right} side="right" />}
+      />
 
-        {/* Left hero — clipped to show its left portion */}
-        <div style={{ clipPath: `inset(0 ${100 - pos}% 0 0)`, transition: clipEase }}>
-          <HeroPane content={data.left} side="left" />
-        </div>
-
-        {/* Right hero — overlaid, clipped to show its right portion */}
-        <div
-          className="absolute inset-0"
-          style={{ clipPath: `inset(0 0 0 ${pos}%)`, transition: clipEase }}
-        >
-          <HeroPane content={data.right} side="right" />
-        </div>
-
-        {/* Invisible spacer so the section takes the correct height */}
-        <div aria-hidden style={{ visibility: 'hidden', pointerEvents: 'none' }}>
-          <HeroPane content={data.left} side="left" />
-        </div>
-
+      {/* Stories section */}
+      <div className="border-t-2 border-black">
+        <StackedSection
+          pos={pos}
+          ease={ease}
+          left={<StoriesPane content={data.left} side="left" />}
+          right={<StoriesPane content={data.right} side="right" />}
+        />
       </div>
 
-      {/* ── STORIES: two columns proportional to slider position ─────────── */}
-      {/* Headlines are nowrap so they clip at the column edge — curtain effect */}
-      <div className="flex border-t-2 border-black">
-
-        <div
-          className="flex-shrink-0 overflow-hidden border-r border-gray-400"
-          style={{ width: `${pos}%`, transition: ease }}
-        >
-          <StoriesColumn content={data.left} side="left" />
-        </div>
-
-        <div
-          className="flex-shrink-0 overflow-hidden"
-          style={{ width: `${100 - pos}%`, transition: ease }}
-        >
-          <StoriesColumn content={data.right} side="right" />
-        </div>
-
-      </div>
-
-      {/* ── DIVIDER: single bar spanning both sections ───────────────────── */}
+      {/* Divider — spans full height of both sections */}
       <div
         className="absolute top-0 bottom-0 z-20 cursor-col-resize"
         style={{
@@ -227,16 +249,16 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
           transform: 'translateX(-50%)',
           width: '5px',
           background: '#111',
-          transition: ease,
+          transition: isDragging ? 'none' : 'left 0.45s ease',
         }}
         onMouseDown={startDrag}
         onTouchStart={startDrag}
       >
-        {/* Drag handle — floats in the hero photo area */}
+        {/* Handle — floats in the photo area */}
         <div
           className="absolute left-1/2 -translate-x-1/2 bg-black text-white rounded-full flex items-center justify-center"
           style={{
-            top: '38%',
+            top: '35%',
             width: '40px',
             height: '40px',
             fontSize: '11px',
