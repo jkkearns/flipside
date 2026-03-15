@@ -2,136 +2,152 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
-import { SideContent, SiteData, Story } from '@/types/stories'
+import { SideContent, SiteData, Story, TopStory } from '@/types/stories'
 
-// ─── Hero pane ────────────────────────────────────────────────────────────────
-// Full-width. Both sides stack; clip-path bisects them at the divider.
-// At 50/50: two different half-photos of the same story meeting at center.
+const SERIF = "Georgia, 'Times New Roman', serif"
+const NEWSPRINT = '#fafaf5'
 
-function HeroPane({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
+// ─── Newspaper front page ──────────────────────────────────────────────────────
+//
+// 4-column broadsheet grid. Lead story (top story + photo) takes 2 columns.
+// Left pane: lead on the LEFT, secondary stories fill right columns.
+// Right pane: lead on the RIGHT, secondary stories fill left columns (mirrored).
+// All text right-aligned on the right pane so headlines "open" from the divider.
+//
+// Grid layout (left pane):
+//   Row 1: [LEAD ×2 cols | Story 1 | Story 2]
+//   Row 2: [Story 3 | Story 4 | Story 5 | Story 6]
+//   Row 3: [Story 7 ×4 cols]
+//
+// Right pane mirrors: lead is in cols 3–4, secondary in cols 1–2.
+
+type ColBorder = { borderRight?: string; borderLeft?: string }
+
+function colRule(i: number, totalCols: number): ColBorder {
+  return i < totalCols - 1 ? { borderRight: '1px solid #999' } : {}
+}
+
+function LeadStory({ story, side, align }: { story: TopStory; side: 'left' | 'right'; align: 'left' | 'right' }) {
   const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
-  const bg = side === 'left' ? '#f7f9ff' : '#fff7f7'
+  return (
+    <a href={story.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+      <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '0.4rem', textAlign: align }}>
+        {story.source}
+      </p>
+      <h2 style={{
+        fontFamily: SERIF,
+        fontSize: 'clamp(1.4rem, 2.5vw, 2.2rem)',
+        fontWeight: 900,
+        lineHeight: 1.1,
+        textTransform: 'uppercase',
+        color: accent,
+        marginBottom: '0.5rem',
+        textAlign: align,
+      }}>
+        {story.headline}
+      </h2>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', marginBottom: '0.5rem' }}>
+        <Image src={story.photo} alt={story.photoAlt} fill className="object-cover" sizes="50vw" />
+      </div>
+    </a>
+  )
+}
+
+function SecondaryStory({ story, size, align }: {
+  story: Story
+  size: 'large' | 'medium' | 'small'
+  align: 'left' | 'right'
+}) {
+  const fontSize = size === 'large' ? '1.15rem' : size === 'medium' ? '0.95rem' : '0.8rem'
+  const weight = size === 'large' ? 800 : 700
+  return (
+    <a href={story.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+      <p style={{ fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: '0.2rem', textAlign: align }}>
+        {story.source}
+      </p>
+      <h3 style={{
+        fontFamily: SERIF,
+        fontSize,
+        fontWeight: weight,
+        lineHeight: 1.25,
+        textTransform: 'uppercase',
+        color: '#111',
+        textAlign: align,
+      }}>
+        {story.headline}
+      </h3>
+    </a>
+  )
+}
+
+function NewspaperPage({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
+  const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
+  const align: 'left' | 'right' = side === 'left' ? 'left' : 'right'
   const label = side === 'left' ? '◀ THE LEFT' : 'THE RIGHT ▶'
-  const align = side === 'left' ? 'left' : 'right'
+
+  // Lead occupies cols 1–2 on left pane, cols 3–4 on right pane
+  const leadCols = side === 'left' ? '1 / 3' : '3 / 5'
+  // Secondary pair in top row: cols 3–4 on left, cols 1–2 on right
+  const sec1Col = side === 'left' ? '3 / 4' : '2 / 3'
+  const sec2Col = side === 'left' ? '4 / 5' : '1 / 2'
+
+  const cell = (gridColumn: string, borderStyle: ColBorder, rowEnd?: string): React.CSSProperties => ({
+    gridColumn,
+    ...(rowEnd ? { gridRow: rowEnd } : {}),
+    padding: '0.75rem 1rem',
+    borderBottom: '1px solid #aaa',
+    ...borderStyle,
+  })
 
   return (
-    <div style={{ backgroundColor: bg, width: '100%' }}>
-      <div className="py-2 px-6 border-b-2 border-black" style={{ backgroundColor: accent }}>
-        <h2
-          className="text-sm font-black uppercase tracking-widest text-white"
-          style={{ textAlign: align }}
-        >
+    <div style={{ backgroundColor: NEWSPRINT, width: '100%', fontFamily: SERIF }}>
+
+      {/* Section label */}
+      <div style={{ backgroundColor: accent, borderBottom: '2px solid black', padding: '0.4rem 1rem' }}>
+        <h2 style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'white', textAlign: align }}>
           {label}
         </h2>
       </div>
-      <div className="px-6 pt-4 pb-2 overflow-hidden">
-        <a href={content.topStory.url} target="_blank" rel="noopener noreferrer">
-          <h2
-            className="font-black uppercase leading-tight hover:underline"
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: 'clamp(1.25rem, 2.5vw, 2rem)',
-              color: accent,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textAlign: align,
-            }}
-          >
-            {content.topStory.headline}
-          </h2>
-        </a>
-        <p
-          className="text-xs text-gray-500 mt-1 uppercase tracking-widest"
-          style={{ textAlign: align }}
-        >
-          {content.topStory.source}
-        </p>
-      </div>
-      <div className="relative w-full" style={{ aspectRatio: '3/2' }}>
-        <Image
-          src={content.topStory.photo}
-          alt={content.topStory.photoAlt}
-          fill
-          className="object-cover"
-          sizes="100vw"
-        />
+
+      {/* Broadsheet grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+
+        {/* ── Row 1: lead story (2 cols) + 2 secondary ── */}
+
+        <div style={cell(leadCols, side === 'left' ? { borderRight: '1px solid #999' } : { borderLeft: '1px solid #999' })}>
+          <LeadStory story={content.topStory} side={side} align={align} />
+        </div>
+
+        <div style={cell(sec1Col, { borderRight: '1px solid #999' })}>
+          <SecondaryStory story={content.stories[0]} size="large" align={align} />
+        </div>
+
+        <div style={cell(sec2Col, side === 'left' ? {} : { borderRight: '1px solid #999' })}>
+          <SecondaryStory story={content.stories[1]} size="large" align={align} />
+        </div>
+
+        {/* ── Row 2: four medium stories ── */}
+
+        {content.stories.slice(2, 6).map((story, i) => (
+          <div key={i} style={cell(`${i + 1} / ${i + 2}`, colRule(i, 4))}>
+            <SecondaryStory story={story} size="medium" align={align} />
+          </div>
+        ))}
+
+        {/* ── Row 3: last story spans full width ── */}
+
+        <div style={{ ...cell('1 / 5', {}), borderBottom: 'none' }}>
+          <SecondaryStory story={content.stories[6]} size="small" align={align} />
+        </div>
+
       </div>
     </div>
   )
 }
 
-// ─── Stories pane ─────────────────────────────────────────────────────────────
-// Full-width. Both sides stack with the same clip-path mechanic as the hero.
-// Left side: LTR, headlines left-aligned — text grows rightward from left edge.
-// Right side: headlines right-aligned — text grows leftward from right edge.
-// Both sides show the beginning of their headlines at the divider edge.
-// No reflow, ever — only the clip boundary moves.
+// ─── Stacked section (shared clip-path mechanic) ──────────────────────────────
 
-function StoryRow({ story, side }: { story: Story; side: 'left' | 'right' }) {
-  const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
-  const align = side === 'left' ? 'left' : 'right'
-  return (
-    <div className="py-2 border-b border-gray-200 px-6 overflow-hidden">
-      <a
-        href={story.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block text-sm font-bold uppercase leading-snug hover:underline"
-        style={{
-          color: '#111',
-          fontFamily: "Georgia, 'Times New Roman', serif",
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textAlign: align,
-        }}
-      >
-        {story.headline}
-      </a>
-      <p
-        className="text-xs uppercase tracking-widest mt-0.5"
-        style={{ color: accent, whiteSpace: 'nowrap', textAlign: align }}
-      >
-        {story.source}
-      </p>
-    </div>
-  )
-}
-
-function StoriesPane({ content, side }: { content: SideContent; side: 'left' | 'right' }) {
-  const accent = side === 'left' ? '#1a56c4' : '#c41a1a'
-  const bg = side === 'left' ? '#f0f3ff' : '#fff0f0'
-  const label = side === 'left' ? '◀ More from the Left' : 'More from the Right ▶'
-  const align = side === 'left' ? 'left' : 'right'
-  return (
-    <div style={{ backgroundColor: bg, width: '100%' }}>
-      <div
-        className="py-1.5 px-6 border-b border-black"
-        style={{ backgroundColor: accent + '18' }}
-      >
-        <h3
-          className="text-xs font-black uppercase tracking-widest"
-          style={{ color: accent, whiteSpace: 'nowrap', textAlign: align }}
-        >
-          {label}
-        </h3>
-      </div>
-      {content.stories.map((story, i) => (
-        <StoryRow key={i} story={story} side={side} />
-      ))}
-    </div>
-  )
-}
-
-// ─── Reusable stacked section ─────────────────────────────────────────────────
-// Renders two full-width panes stacked. Left clips to show its left portion;
-// right clips to show its right portion. A hidden spacer sets the height.
-
-function StackedSection({
-  left,
-  right,
-  pos,
-  ease,
-}: {
+function StackedSection({ left, right, pos, ease }: {
   left: React.ReactNode
   right: React.ReactNode
   pos: number
@@ -139,18 +155,9 @@ function StackedSection({
 }) {
   return (
     <div className="relative">
-      {/* Left pane — in flow (sets height), clipped to left portion */}
-      <div style={{ clipPath: `inset(0 ${100 - pos}% 0 0)`, transition: ease }}>
-        {left}
-      </div>
-      {/* Right pane — absolute overlay, clipped to right portion */}
-      <div className="absolute inset-0" style={{ clipPath: `inset(0 0 0 ${pos}%)`, transition: ease }}>
-        {right}
-      </div>
-      {/* Spacer — invisible, sets container height */}
-      <div aria-hidden style={{ visibility: 'hidden', pointerEvents: 'none' }}>
-        {left}
-      </div>
+      <div style={{ clipPath: `inset(0 ${100 - pos}% 0 0)`, transition: ease }}>{left}</div>
+      <div className="absolute inset-0" style={{ clipPath: `inset(0 0 0 ${pos}%)`, transition: ease }}>{right}</div>
+      <div aria-hidden style={{ visibility: 'hidden', pointerEvents: 'none' }}>{left}</div>
     </div>
   )
 }
@@ -171,27 +178,14 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
     setPos(clamp(((clientX - rect.left) / rect.width) * 100))
   }, [])
 
-  const onMouseMove = useCallback((e: MouseEvent) => {
-    if (dragging.current) updatePos(e.clientX)
-  }, [updatePos])
-
+  const onMouseMove = useCallback((e: MouseEvent) => { if (dragging.current) updatePos(e.clientX) }, [updatePos])
   const onMouseUp = useCallback(() => {
-    dragging.current = false
-    setIsDragging(false)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
+    dragging.current = false; setIsDragging(false)
+    document.body.style.cursor = ''; document.body.style.userSelect = ''
   }, [])
+  const onTouchMove = useCallback((e: TouchEvent) => { if (dragging.current) updatePos(e.touches[0].clientX) }, [updatePos])
+  const onTouchEnd = useCallback(() => { dragging.current = false; setIsDragging(false) }, [])
 
-  const onTouchMove = useCallback((e: TouchEvent) => {
-    if (dragging.current) updatePos(e.touches[0].clientX)
-  }, [updatePos])
-
-  const onTouchEnd = useCallback(() => {
-    dragging.current = false
-    setIsDragging(false)
-  }, [])
-
-  // Hint animation on load
   useEffect(() => {
     const t1 = setTimeout(() => setPos(35), 700)
     const t2 = setTimeout(() => setPos(50), 1400)
@@ -212,8 +206,7 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
   }, [onMouseMove, onMouseUp, onTouchMove, onTouchEnd])
 
   const startDrag = () => {
-    dragging.current = true
-    setIsDragging(true)
+    dragging.current = true; setIsDragging(true)
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
   }
@@ -223,25 +216,13 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
   return (
     <div ref={containerRef} className="relative overflow-hidden select-none">
 
-      {/* Hero section */}
       <StackedSection
-        pos={pos}
-        ease={ease}
-        left={<HeroPane content={data.left} side="left" />}
-        right={<HeroPane content={data.right} side="right" />}
+        pos={pos} ease={ease}
+        left={<NewspaperPage content={data.left} side="left" />}
+        right={<NewspaperPage content={data.right} side="right" />}
       />
 
-      {/* Stories section */}
-      <div className="border-t-2 border-black">
-        <StackedSection
-          pos={pos}
-          ease={ease}
-          left={<StoriesPane content={data.left} side="left" />}
-          right={<StoriesPane content={data.right} side="right" />}
-        />
-      </div>
-
-      {/* Divider — spans full height of both sections */}
+      {/* Divider */}
       <div
         className="absolute top-0 bottom-0 z-20 cursor-col-resize"
         style={{
@@ -254,14 +235,11 @@ export default function ComparisonSlider({ data }: { data: SiteData }) {
         onMouseDown={startDrag}
         onTouchStart={startDrag}
       >
-        {/* Handle — floats in the photo area */}
         <div
           className="absolute left-1/2 -translate-x-1/2 bg-black text-white rounded-full flex items-center justify-center"
           style={{
-            top: '35%',
-            width: '40px',
-            height: '40px',
-            fontSize: '11px',
+            top: '28%',
+            width: '40px', height: '40px', fontSize: '11px',
             letterSpacing: '0.05em',
             boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
             border: '2px solid white',
